@@ -1,0 +1,19 @@
+# Ambientes Virtuais
+venv/
+env/
+.venv/
+
+# Variáveis de Ambiente (Segurança)
+.env
+
+# Bancos de Dados e Arquivos Gerados
+*.db
+*.sqlite
+*.sqlite3
+*.csv
+
+# Lixo do Python e Flet
+__pycache__/
+*.pyc
+*.zip*
+.pytest_cache/
