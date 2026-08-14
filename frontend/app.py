@@ -47,15 +47,15 @@ def main(page: ft.Page):
     dados_movimentacoes = []
 
     # =========================================================================
-    # TELA 0: HOME / DASHBOARD
+    # TELA 0: HOME / DASHBOARD (GRÁFICOS NATIVOS)
     # =========================================================================
     kpi_skus = ft.Text("0", size=28, weight="bold")
     kpi_valor = ft.Text("$ 0.00", size=28, weight="bold")
     kpi_locais = ft.Text("0", size=28, weight="bold")
     kpi_ops = ft.Text("0", size=28, weight="bold") 
     
-    container_grafico_linha = ft.Container(height=300, padding=10)
-    container_grafico_barra = ft.Container(height=300, padding=10)
+    container_grafico_linha = ft.Container(height=300, padding=15)
+    container_grafico_barra = ft.Container(height=300, padding=15)
 
     def criar_card_kpi(titulo, texto_valor, trend_text, trend_color, trend_icon):
         return ft.Card(
@@ -92,17 +92,41 @@ def main(page: ft.Page):
         kpi_locais.value = str(total_locais)
         kpi_ops.value = str(total_operacoes) 
         
+        # --- CONSTRUÇÃO DE GRÁFICOS BLINDADOS USANDO CONTAINERS ---
         if total_skus > 0:
             produtos_top = sorted(dados_produtos, key=lambda x: float(x["price"]) * estoque_real.get(x["id"], 0), reverse=True)[:5]
-            barras, rotulos_b = [], []
-            for i, p in enumerate(produtos_top):
-                valor_estocado = float(p["price"]) * estoque_real.get(p["id"], 0)
-                barras.append(ft.BarChartGroup(x=i, bar_rods=[ft.BarChartRod(from_y=0, to_y=valor_estocado, color="green", width=20)]))
-                rotulos_b.append(ft.ChartAxisLabel(value=i, label=ft.Text(p["sku"][:5], size=10)))
+            max_valor_barra = max([float(p["price"]) * estoque_real.get(p["id"], 0) for p in produtos_top]) if produtos_top else 1
             
-            container_grafico_barra.content = ft.BarChart(bar_groups=barras, bottom_axis=ft.ChartAxis(labels=rotulos_b), tooltip_bgcolor="#263238", border=ft.border.all(1, "grey"), expand=True)
-            pontos_linha = [ft.LineChartDataPoint(i, float(p["price"])) for i, p in enumerate(dados_produtos[:10])]
-            container_grafico_linha.content = ft.LineChart(data_series=[ft.LineChartData(data_points=pontos_linha, stroke_width=3, color="blue", curved=True, stroke_cap_round=True)], border=ft.border.all(1, "grey"), horizontal_grid_lines=ft.ChartGridLines(color="grey", width=1, dash_pattern=[3, 3]), tooltip_bgcolor="#263238", expand=True)
+            # Gráfico de Barras Customizado (Top 5 Valor)
+            barras_ui = []
+            for p in produtos_top:
+                valor_estocado = float(p["price"]) * estoque_real.get(p["id"], 0)
+                altura = (valor_estocado / max_valor_barra) * 180 if max_valor_barra > 0 else 0 
+                
+                barras_ui.append(
+                    ft.Column([
+                        ft.Text(f"${valor_estocado/1000:.1f}k", size=11, color="#B0BEC5", text_align="center"),
+                        ft.Container(width=45, height=altura, bgcolor="#4CAF50", border_radius=ft.border_radius.vertical(top=6)),
+                        ft.Text(p["sku"][:5], size=11, weight="bold", text_align="center")
+                    ], alignment=ft.MainAxisAlignment.END, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                )
+            container_grafico_barra.content = ft.Row(barras_ui, alignment=ft.MainAxisAlignment.SPACE_EVENLY, vertical_alignment=ft.CrossAxisAlignment.END, expand=True)
+            
+            # Gráfico de Lista de Ativos (Crescimento)
+            linhas_ui = []
+            max_preco = max([float(p["price"]) for p in dados_produtos]) if dados_produtos else 1
+            for p in dados_produtos[:6]:
+                linhas_ui.append(
+                    ft.Column([
+                        ft.Row([
+                            ft.Icon(ft.Icons.TRENDING_UP, size=16, color="#2196F3"),
+                            ft.Text(p["name"], size=13, expand=True),
+                            ft.Text(f"$ {float(p['price']):,.2f}", size=13, weight="bold")
+                        ]),
+                        ft.ProgressBar(value=float(p["price"])/max_preco if max_preco > 0 else 0, color="#2196F3", bgcolor="#37474F", height=6)
+                    ], spacing=4)
+                )
+            container_grafico_linha.content = ft.Column(linhas_ui, expand=True, spacing=15)
         else:
             container_grafico_barra.content = ft.Text("Sem dados suficientes.")
             container_grafico_linha.content = ft.Text("Sem dados suficientes.")
@@ -112,7 +136,6 @@ def main(page: ft.Page):
     def carregar_tudo_e_atualizar():
         nonlocal dados_produtos, dados_locais, dados_movimentacoes
         try:
-            # 🔧 Correção: Adicionando o crachá de segurança (headers) nas requisições GET!
             res_p = requests.get(f"{API_BASE_URL}/products/", headers=HEADERS_SEGUROS)
             res_l = requests.get(f"{API_BASE_URL}/locations/", headers=HEADERS_SEGUROS)
             res_m = requests.get(f"{API_BASE_URL}/movements/", headers=HEADERS_SEGUROS) 
@@ -137,8 +160,8 @@ def main(page: ft.Page):
         ft.Divider(height=30, color="transparent"),
         ft.Text("Evolução de Ativos & Concentração", size=20, weight="bold"),
         ft.Row([
-            ft.Card(content=ft.Container(content=ft.Column([ft.Text("Crescimento", weight="bold"), container_grafico_linha]), padding=15), expand=2),
-            ft.Card(content=ft.Container(content=ft.Column([ft.Text("Top 5 Valor", weight="bold"), container_grafico_barra]), padding=15), expand=1),
+            ft.Card(content=container_grafico_linha, expand=2),
+            ft.Card(content=container_grafico_barra, expand=1),
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True, scroll=ft.ScrollMode.AUTO) 
 
