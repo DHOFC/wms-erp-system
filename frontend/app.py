@@ -8,7 +8,9 @@ API_BASE_URL = "https://wms-erp-system.onrender.com"
 HEADERS_SEGUROS = {"X-API-Key": "wms-secreto-2024"}
 
 def main(page: ft.Page):
+    # =========================================================================
     # 1. CONFIGURAÇÕES DA JANELA E TEMA CORPORATIVO
+    # =========================================================================
     page.title = "WMS Enterprise - Dashboard"
     page.theme_mode = ft.ThemeMode.DARK
     page.window.width = 1000
@@ -22,7 +24,9 @@ def main(page: ft.Page):
         texto_notificacao.color = cor
         page.update()
 
+    # =========================================================================
     # COMPONENTE BLINDADO: BOTÃO CUSTOMIZADO
+    # =========================================================================
     def btn_custom(texto, cor, click, icone=None):
         elementos = []
         if icone:
@@ -35,18 +39,21 @@ def main(page: ft.Page):
             on_click=click, height=40
         )
 
+    # =========================================================================
     # VARIÁVEIS GLOBAIS DE DADOS
+    # =========================================================================
     dados_produtos = []
     dados_locais = []
     dados_movimentacoes = []
 
+    # =========================================================================
     # TELA 0: HOME / DASHBOARD (GRÁFICOS NATIVOS SEGUROS)
+    # =========================================================================
     kpi_skus = ft.Text("0", size=28, weight="bold")
     kpi_valor = ft.Text("$ 0.00", size=28, weight="bold")
     kpi_locais = ft.Text("0", size=28, weight="bold")
     kpi_ops = ft.Text("0", size=28, weight="bold") 
     
-    # Iniciar os containers já com conteúdo para evitar o bug de otimização do Flutter
     container_grafico_linha = ft.Container(content=ft.Text("Aguardando dados...", color="grey"), height=300, padding=15)
     container_grafico_barra = ft.Container(content=ft.Text("Aguardando dados...", color="grey"), height=300, padding=15)
 
@@ -86,12 +93,10 @@ def main(page: ft.Page):
             kpi_locais.value = str(total_locais)
             kpi_ops.value = str(total_operacoes) 
             
-            # --- CONSTRUÇÃO DE GRÁFICOS USANDO PROPRIEDADES 100% SEGURAS ---
             if total_skus > 0:
                 produtos_top = sorted(dados_produtos, key=lambda x: float(x["price"]) * estoque_real.get(x["id"], 0), reverse=True)[:5]
                 max_valor_barra = max([float(p["price"]) * estoque_real.get(p["id"], 0) for p in produtos_top]) if produtos_top else 1
                 
-                # Gráfico de Barras Customizado (Top 5 Valor)
                 barras_ui = []
                 for p in produtos_top:
                     valor_estocado = float(p["price"]) * estoque_real.get(p["id"], 0)
@@ -100,14 +105,12 @@ def main(page: ft.Page):
                     barras_ui.append(
                         ft.Column([
                             ft.Text(f"${valor_estocado/1000:.1f}k", size=11, color="#B0BEC5"),
-                            # border_radius com int absoluto para não quebrar
                             ft.Container(width=45, height=altura, bgcolor="#4CAF50", border_radius=5),
                             ft.Text(p["sku"][:5], size=11, weight="bold")
                         ], alignment=ft.MainAxisAlignment.END, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
                     )
                 container_grafico_barra.content = ft.Row(barras_ui, alignment=ft.MainAxisAlignment.SPACE_EVENLY, vertical_alignment=ft.CrossAxisAlignment.END, expand=True)
                 
-                # Gráfico de Lista de Ativos (Crescimento)
                 linhas_ui = []
                 max_preco = max([float(p["price"]) for p in dados_produtos]) if dados_produtos else 1
                 for p in dados_produtos[:6]:
@@ -118,7 +121,6 @@ def main(page: ft.Page):
                                 ft.Text(p["name"], size=13, expand=True),
                                 ft.Text(f"$ {float(p['price']):,.2f}", size=13, weight="bold")
                             ]),
-                            # ProgressBar envolvida em Container para proteger a propriedade height
                             ft.Container(height=6, content=ft.ProgressBar(value=float(p["price"])/max_preco if max_preco > 0 else 0, color="#2196F3", bgcolor="#37474F"))
                         ], spacing=4)
                     )
@@ -129,16 +131,10 @@ def main(page: ft.Page):
             
             page.update()
             
-            # Força o recarregamento direto na memória da página
-            if container_grafico_barra.page: container_grafico_barra.update()
-            if container_grafico_linha.page: container_grafico_linha.update()
-            
         except Exception as e:
-            # CHEGA DE FALHAS SILENCIOSAS. Se o gráfico quebrar, ele vai avisar o porquê na tela!
             container_grafico_barra.content = ft.Text(f"Erro Visual: {e}", color="red")
             container_grafico_linha.content = ft.Text(f"Erro Visual: {e}", color="red")
-            if container_grafico_barra.page: container_grafico_barra.update()
-            if container_grafico_linha.page: container_grafico_linha.update()
+            page.update()
 
     def carregar_tudo_e_atualizar():
         nonlocal dados_produtos, dados_locais, dados_movimentacoes
@@ -153,7 +149,6 @@ def main(page: ft.Page):
         except Exception as e:
             print(f"Erro na API: {e}")
         
-        # Chama a atualização dos KPIs FORA do try..except da API para blindar a lógica
         atualizar_kpis()
 
     tela_home = ft.Column([
@@ -174,7 +169,9 @@ def main(page: ft.Page):
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True, scroll=ft.ScrollMode.AUTO) 
 
+    # =========================================================================
     # TELA 1: TERMINAL DE OPERAÇÃO
+    # =========================================================================
     campo_produto_op = ft.TextField(label="ID do Produto", width=300)
     campo_local_op = ft.TextField(label="ID da Prateleira", width=300)
     campo_qtd_op = ft.TextField(label="Quantidade", width=300, keyboard_type=ft.KeyboardType.NUMBER)
@@ -203,7 +200,9 @@ def main(page: ft.Page):
         btn_custom("Confirmar Movimentação", "blue", enviar_movimentacao, ft.Icons.CHECK_CIRCLE)
     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, expand=True)
 
+    # =========================================================================
     # TELA 2: GESTÃO DE PRODUTOS
+    # =========================================================================
     tabela_produtos = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("SKU")), ft.DataColumn(ft.Text("Nome")), ft.DataColumn(ft.Text("Preço")), ft.DataColumn(ft.Text("Ações"))], rows=[])
 
     def renderizar_produtos(lista):
@@ -222,25 +221,24 @@ def main(page: ft.Page):
 
     campo_pesq_prod = ft.TextField(label="🔍 Pesquisar Produto...", width=400, on_change=filtrar_produtos)
 
-    def carregar_produtos(e=None):
-        carregar_tudo_e_atualizar()
-        filtrar_produtos(None)
-
     def confirmar_excluir_produto(sku):
         def fechar(e): pop_up.open = False; page.update()
         def deletar(e):
             fechar(None); requests.delete(f"{API_BASE_URL}/products/{sku}", headers=HEADERS_SEGUROS)
-            carregar_produtos(); mostrar_notificacao(f"✅ SKU {sku} excluído!", "green")
+            carregar_tudo_e_atualizar(); filtrar_produtos(None)
+            mostrar_notificacao(f"✅ SKU {sku} excluído!", "green")
         pop_up = ft.AlertDialog(title=ft.Text("Excluir Produto"), content=ft.Text(f"Deletar '{sku}'?"), actions=[btn_custom("Cancelar", "grey", fechar), btn_custom("Excluir", "red", deletar)])
         page.dialog = pop_up; pop_up.open = True; page.update()
 
     tela_produtos = ft.Column([
         ft.Text("Estoque de Produtos", size=28, weight="bold", color="blue"),
-        ft.Row([campo_pesq_prod, ft.IconButton(icon=ft.Icons.REFRESH, on_click=carregar_produtos)]),
+        ft.Row([campo_pesq_prod, ft.IconButton(icon=ft.Icons.REFRESH, on_click=lambda e: (carregar_tudo_e_atualizar(), filtrar_produtos(None)))]),
         ft.Column([tabela_produtos], scroll=ft.ScrollMode.AUTO, expand=True)
     ], expand=True)
 
+    # =========================================================================
     # TELA 3: GESTÃO DE PRATELEIRAS
+    # =========================================================================
     tabela_locais = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("Código")), ft.DataColumn(ft.Text("Descrição")), ft.DataColumn(ft.Text("Ações"))], rows=[])
 
     def renderizar_locais(lista):
@@ -259,25 +257,24 @@ def main(page: ft.Page):
 
     campo_pesq_locais = ft.TextField(label="🔍 Pesquisar Prateleira...", width=400, on_change=filtrar_locais)
 
-    def carregar_locais(e=None):
-        carregar_tudo_e_atualizar()
-        filtrar_locais(None)
-
     def confirmar_excluir_local(lid, cod):
         def fechar(e): pop_up.open = False; page.update()
         def deletar(e):
             fechar(None); requests.delete(f"{API_BASE_URL}/locations/{lid}", headers=HEADERS_SEGUROS)
-            carregar_locais(); mostrar_notificacao(f"✅ Prateleira {cod} excluída!", "green")
+            carregar_tudo_e_atualizar(); filtrar_locais(None)
+            mostrar_notificacao(f"✅ Prateleira {cod} excluída!", "green")
         pop_up = ft.AlertDialog(title=ft.Text("Excluir Prateleira"), content=ft.Text(f"Deletar '{cod}'?"), actions=[btn_custom("Cancelar", "grey", fechar), btn_custom("Excluir", "red", deletar)])
         page.dialog = pop_up; pop_up.open = True; page.update()
 
     tela_prateleiras = ft.Column([
         ft.Text("Mapa de Prateleiras", size=28, weight="bold", color="orange"),
-        ft.Row([campo_pesq_locais, ft.IconButton(icon=ft.Icons.REFRESH, on_click=carregar_locais)]),
+        ft.Row([campo_pesq_locais, ft.IconButton(icon=ft.Icons.REFRESH, on_click=lambda e: (carregar_tudo_e_atualizar(), filtrar_locais(None)))]),
         ft.Column([tabela_locais], scroll=ft.ScrollMode.AUTO, expand=True)
     ], expand=True)
 
+    # =========================================================================
     # TELA 4: CADASTROS
+    # =========================================================================
     c_nome = ft.TextField(label="Nome", width=250); c_sku = ft.TextField(label="SKU", width=250)
     c_desc = ft.TextField(label="Descrição", width=250); c_preco = ft.TextField(label="Preço", width=250)
     
@@ -285,7 +282,8 @@ def main(page: ft.Page):
         try:
             req = requests.post(f"{API_BASE_URL}/products/", json={"name": c_nome.value, "sku": c_sku.value, "description": c_desc.value, "price": float(c_preco.value.replace(",","."))}, headers=HEADERS_SEGUROS)
             if req.status_code == 201: 
-                mostrar_notificacao("✅ Produto cadastrado!", "green"); carregar_produtos()
+                mostrar_notificacao("✅ Produto cadastrado!", "green")
+                carregar_tudo_e_atualizar(); filtrar_produtos(None)
         except Exception: mostrar_notificacao("❌ Erro ao salvar produto.", "red")
 
     c_loc_cod = ft.TextField(label="Código", width=250); c_loc_desc = ft.TextField(label="Descrição", width=250)
@@ -293,7 +291,8 @@ def main(page: ft.Page):
         try:
             req = requests.post(f"{API_BASE_URL}/locations/", json={"code": c_loc_cod.value, "description": c_loc_desc.value}, headers=HEADERS_SEGUROS)
             if req.status_code == 201:
-                mostrar_notificacao("✅ Prateleira cadastrada!", "green"); carregar_locais() 
+                mostrar_notificacao("✅ Prateleira cadastrada!", "green")
+                carregar_tudo_e_atualizar(); filtrar_locais(None)
         except Exception: mostrar_notificacao("❌ Erro ao salvar prateleira.", "red")
 
     tela_cadastros = ft.Column([
@@ -305,7 +304,9 @@ def main(page: ft.Page):
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True)
 
+    # =========================================================================
     # MENU LATERAL CUSTOMIZADO
+    # =========================================================================
     telas = [tela_home, tela_terminal, tela_produtos, tela_prateleiras, tela_cadastros]
     area_principal = ft.Container(content=tela_home, expand=True, padding=20)
     botoes_menu = []
@@ -340,7 +341,23 @@ def main(page: ft.Page):
         width=180, bgcolor="#1E1E1E", padding=10
     )
 
-    # INICIALIZAÇÃO E AUTO-REFRESH
+    # =========================================================================
+    # 2. ADICIONAR À TELA PRIMEIRO (CORREÇÃO DE ARQUITETURA)
+    # =========================================================================
+    page.add(
+        ft.Row(
+            controls=[
+                menu_lateral,
+                ft.VerticalDivider(width=1),
+                ft.Column([texto_notificacao, area_principal], expand=True)
+            ],
+            expand=True
+        )
+    )
+
+    # =========================================================================
+    # 3. CARREGAR DADOS E ATUALIZAR GRÁFICOS APENAS DEPOIS DA TELA PRONTA
+    # =========================================================================
     carregar_tudo_e_atualizar()
     filtrar_produtos(None)
     filtrar_locais(None)
@@ -353,16 +370,6 @@ def main(page: ft.Page):
 
     threading.Thread(target=motor_de_atualizacao, daemon=True).start()
 
-    page.add(
-        ft.Row(
-            controls=[
-                menu_lateral,
-                ft.VerticalDivider(width=1),
-                ft.Column([texto_notificacao, area_principal], expand=True)
-            ],
-            expand=True
-        )
-    )
 
 porta = int(os.environ.get("PORT", 8080))
 ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=porta)
