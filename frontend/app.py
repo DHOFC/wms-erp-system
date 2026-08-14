@@ -313,7 +313,7 @@ def main(page: ft.Page):
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True)
 
-    # A MÁGICA DA NAVEGAÇÃO LATERAL (CORREÇÃO DE ÍCONES)
+    # A MÁGICA DA NAVEGAÇÃO LATERAL (CORREÇÃO DE PARÂMETRO)
     telas = [tela_home, tela_terminal, tela_produtos, tela_prateleiras, tela_cadastros]
     
     area_principal = ft.Container(content=tela_home, expand=True, padding=20)
@@ -329,12 +329,12 @@ def main(page: ft.Page):
         min_width=100,
         group_alignment=-0.9, 
         destinations=[
-            # Usando icon_content = ft.Icon() para contornar o tipo estrito da nova versão
-            ft.NavigationRailDestination(icon_content=ft.Icon(name="dashboard"), label="Dashboard"),
-            ft.NavigationRailDestination(icon_content=ft.Icon(name="qr_code_scanner"), label="Terminal"),
-            ft.NavigationRailDestination(icon_content=ft.Icon(name="inventory_2"), label="Produtos"),
-            ft.NavigationRailDestination(icon_content=ft.Icon(name="view_list"), label="Prateleiras"),
-            ft.NavigationRailDestination(icon_content=ft.Icon(name="add_circle"), label="Cadastros"),
+            # Removido o 'name=' para se adaptar às novas regras do Flet
+            ft.NavigationRailDestination(icon_content=ft.Icon("dashboard"), label="Dashboard"),
+            ft.NavigationRailDestination(icon_content=ft.Icon("qr_code_scanner"), label="Terminal"),
+            ft.NavigationRailDestination(icon_content=ft.Icon("inventory_2"), label="Produtos"),
+            ft.NavigationRailDestination(icon_content=ft.Icon("view_list"), label="Prateleiras"),
+            ft.NavigationRailDestination(icon_content=ft.Icon("add_circle"), label="Cadastros"),
         ],
         on_change=mudar_tela,
     )
