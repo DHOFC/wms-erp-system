@@ -208,7 +208,7 @@ def main(page: ft.Page):
                 campo_produto_op, campo_local_op, campo_qtd_op, campo_tipo_op,
                 btn_custom("Confirmar Movimentação", "blue", enviar_movimentacao, ft.Icons.CHECK_CIRCLE)
             ], spacing=15),
-            width=400 # 🔧 Trocado max_width para width para compatibilidade
+            width=400 
         )
     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, expand=True)
 
@@ -244,7 +244,10 @@ def main(page: ft.Page):
     # MENU SUPERIOR CUSTOMIZADO
     # =========================================================================
     telas = [tela_home, tela_terminal, tela_produtos]
-    area_principal = ft.Container(content=tela_home, expand=True, padding=ft.padding.only(top=10))
+    
+    # 🔧 MUDANÇA BRUTA: Removendo o ft.padding.only(top=10) instável e usando um número absoluto (10)
+    area_principal = ft.Container(content=tela_home, expand=True, padding=10)
+    
     botoes_menu = []
 
     def atualizar_destaque_menu(index_selecionado):
@@ -259,7 +262,8 @@ def main(page: ft.Page):
     def criar_item_menu(icone, texto, index):
         c = ft.Container(
             content=ft.Row([ft.Icon(icone, color="white", size=18), ft.Text(texto, color="white", weight="bold")]),
-            padding=ft.padding.symmetric(horizontal=15, vertical=10), border_radius=10, ink=True,
+            # 🔧 MUDANÇA BRUTA: Removendo o ft.padding.symmetric instável e usando um número absoluto (10)
+            padding=10, border_radius=10, ink=True,
             on_click=lambda e, i=index: mudar_tela(i),
             bgcolor="#37474F" if index == 0 else "transparent"
         )
