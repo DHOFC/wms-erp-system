@@ -41,6 +41,32 @@ def main(page: ft.Page):
     dados_movimentacoes = []
 
     # =========================================================================
+    # FUNÇÕES DE RENDERIZAÇÃO DE TABELAS (Declaradas antes para uso global)
+    # =========================================================================
+    tabela_produtos = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("SKU")), ft.DataColumn(ft.Text("Nome")), ft.DataColumn(ft.Text("Preço")), ft.DataColumn(ft.Text("Ações"))], rows=[])
+    tabela_locais = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("Código")), ft.DataColumn(ft.Text("Descrição")), ft.DataColumn(ft.Text("Ações"))], rows=[])
+
+    def renderizar_produtos(lista=None):
+        fonte_dados = lista if lista is not None else dados_produtos
+        tabela_produtos.rows.clear()
+        for p in fonte_dados:
+            tabela_produtos.rows.append(ft.DataRow(cells=[
+                ft.DataCell(ft.Text(str(p["id"]))), ft.DataCell(ft.Text(p["sku"])), ft.DataCell(ft.Text(p["name"])), ft.DataCell(ft.Text(f"R$ {p['price']:.2f}")),
+                ft.DataCell(ft.IconButton(icon=ft.Icons.DELETE, icon_color="red", on_click=lambda e, s=p["sku"]: confirmar_excluir_produto(s))),
+            ]))
+        page.update()
+
+    def renderizar_locais(lista=None):
+        fonte_dados = lista if lista is not None else dados_locais
+        tabela_locais.rows.clear()
+        for l in fonte_dados:
+            tabela_locais.rows.append(ft.DataRow(cells=[
+                ft.DataCell(ft.Text(str(l["id"]))), ft.DataCell(ft.Text(l["code"])), ft.DataCell(ft.Text(l["description"])),
+                ft.DataCell(ft.IconButton(icon=ft.Icons.DELETE, icon_color="red", on_click=lambda e, lid=l["id"], cod=l["code"]: confirmar_excluir_local(lid, cod))),
+            ]))
+        page.update()
+
+    # =========================================================================
     # TELA 0: HOME / DASHBOARD (DINÂMICO E RESPONSIVO)
     # =========================================================================
     kpi_skus = ft.Text("0", size=28, weight="bold")
@@ -134,7 +160,6 @@ def main(page: ft.Page):
                 container_grafico_linha.content = ft.Text("Sem dados no estoque.", color="grey")
             
             page.update()
-            
         except Exception as e:
             container_grafico_barra.content = ft.Text(f"Erro Visual: {e}", color="red")
             container_grafico_linha.content = ft.Text(f"Erro Visual: {e}", color="red")
@@ -154,6 +179,8 @@ def main(page: ft.Page):
             print(f"Erro na API: {e}")
         
         atualizar_kpis()
+        renderizar_produtos()
+        renderizar_locais()
 
     tela_home = ft.Column([
         ft.Text("Executive Dashboard", size=28, weight="bold"),
@@ -215,8 +242,6 @@ def main(page: ft.Page):
     # =========================================================================
     # TELA 2: GESTÃO DE PRODUTOS
     # =========================================================================
-    tabela_produtos = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("SKU")), ft.DataColumn(ft.Text("Nome")), ft.DataColumn(ft.Text("Preço")), ft.DataColumn(ft.Text("Ações"))], rows=[])
-    
     def confirmar_excluir_produto(sku):
         def fechar(e): pop_up.open = False; page.update()
         def deletar(e):
@@ -225,29 +250,106 @@ def main(page: ft.Page):
         pop_up = ft.AlertDialog(title=ft.Text("Excluir Produto"), content=ft.Text(f"Deletar '{sku}'?"), actions=[btn_custom("Cancelar", "grey", fechar), btn_custom("Excluir", "red", deletar)])
         page.dialog = pop_up; pop_up.open = True; page.update()
 
-    def renderizar_produtos():
-        tabela_produtos.rows.clear()
-        for p in dados_produtos:
-            tabela_produtos.rows.append(ft.DataRow(cells=[
-                ft.DataCell(ft.Text(str(p["id"]))), ft.DataCell(ft.Text(p["sku"])), ft.DataCell(ft.Text(p["name"])), ft.DataCell(ft.Text(f"R$ {p['price']:.2f}")),
-                ft.DataCell(ft.IconButton(icon=ft.Icons.DELETE, icon_color="red", on_click=lambda e, s=p["sku"]: confirmar_excluir_produto(s))),
-            ]))
-        page.update()
+    def filtrar_produtos(e):
+        termo = campo_pesq_prod.value.lower()
+        if not termo: renderizar_produtos(dados_produtos)
+        else: renderizar_produtos([p for p in dados_produtos if termo in p["name"].lower() or termo in p["sku"].lower()])
+
+    campo_pesq_prod = ft.TextField(label="🔍 Pesquisar Produto...", expand=True, on_change=filtrar_produtos)
 
     tela_produtos = ft.Column([
         ft.Text("Estoque de Produtos", size=28, weight="bold", color="blue"),
-        ft.Row([ft.IconButton(icon=ft.Icons.REFRESH, on_click=lambda e: carregar_tudo_e_atualizar())]),
+        ft.Row([campo_pesq_prod, ft.IconButton(icon=ft.Icons.REFRESH, on_click=lambda e: carregar_tudo_e_atualizar())]),
         ft.Row([tabela_produtos], scroll=ft.ScrollMode.AUTO)
     ], expand=True, scroll=ft.ScrollMode.AUTO)
 
     # =========================================================================
-    # MENU SUPERIOR CUSTOMIZADO
+    # TELA 3: GESTÃO DE PRATELEIRAS (RESTAURADA)
     # =========================================================================
-    telas = [tela_home, tela_terminal, tela_produtos]
+    def confirmar_excluir_local(lid, cod):
+        def fechar(e): pop_up.open = False; page.update()
+        def deletar(e):
+            fechar(None); requests.delete(f"{API_BASE_URL}/locations/{lid}", headers=HEADERS_SEGUROS)
+            carregar_tudo_e_atualizar(); mostrar_notificacao(f"✅ Prateleira {cod} excluída!", "green")
+        pop_up = ft.AlertDialog(title=ft.Text("Excluir Prateleira"), content=ft.Text(f"Deletar '{cod}'?"), actions=[btn_custom("Cancelar", "grey", fechar), btn_custom("Excluir", "red", deletar)])
+        page.dialog = pop_up; pop_up.open = True; page.update()
+
+    def filtrar_locais(e):
+        termo = campo_pesq_locais.value.lower()
+        if not termo: renderizar_locais(dados_locais)
+        else: renderizar_locais([l for l in dados_locais if termo in l["code"].lower() or termo in l["description"].lower()])
+
+    campo_pesq_locais = ft.TextField(label="🔍 Pesquisar Prateleira...", expand=True, on_change=filtrar_locais)
+
+    tela_prateleiras = ft.Column([
+        ft.Text("Mapa de Prateleiras", size=28, weight="bold", color="orange"),
+        ft.Row([campo_pesq_locais, ft.IconButton(icon=ft.Icons.REFRESH, on_click=lambda e: carregar_tudo_e_atualizar())]),
+        ft.Row([tabela_locais], scroll=ft.ScrollMode.AUTO)
+    ], expand=True, scroll=ft.ScrollMode.AUTO)
+
+    # =========================================================================
+    # TELA 4: CADASTROS (RESTAURADA E OTIMIZADA PARA MOBILE)
+    # =========================================================================
+    c_nome = ft.TextField(label="Nome")
+    c_sku = ft.TextField(label="SKU")
+    c_desc = ft.TextField(label="Descrição")
+    c_preco = ft.TextField(label="Preço")
     
-    # 🔧 MUDANÇA BRUTA: Removendo o ft.padding.only(top=10) instável e usando um número absoluto (10)
+    def salvar_produto(e):
+        try:
+            req = requests.post(f"{API_BASE_URL}/products/", json={"name": c_nome.value, "sku": c_sku.value, "description": c_desc.value, "price": float(c_preco.value.replace(",","."))}, headers=HEADERS_SEGUROS)
+            if req.status_code == 201: 
+                mostrar_notificacao("✅ Produto cadastrado!", "green")
+                carregar_tudo_e_atualizar()
+                c_nome.value = ""; c_sku.value = ""; c_desc.value = ""; c_preco.value = ""
+        except Exception: mostrar_notificacao("❌ Erro ao salvar produto.", "red")
+        page.update()
+
+    c_loc_cod = ft.TextField(label="Código")
+    c_loc_desc = ft.TextField(label="Descrição")
+    
+    def salvar_prateleira(e):
+        try:
+            req = requests.post(f"{API_BASE_URL}/locations/", json={"code": c_loc_cod.value, "description": c_loc_desc.value}, headers=HEADERS_SEGUROS)
+            if req.status_code == 201:
+                mostrar_notificacao("✅ Prateleira cadastrada!", "green")
+                carregar_tudo_e_atualizar()
+                c_loc_cod.value = ""; c_loc_desc.value = ""
+        except Exception: mostrar_notificacao("❌ Erro ao salvar prateleira.", "red")
+        page.update()
+
+    tela_cadastros = ft.Column([
+        ft.Text("Central de Cadastros", size=28, weight="bold", color="purple"),
+        ft.Divider(color="transparent", height=10),
+        # 🔧 UX Refatorada: Formulários lado a lado no PC, e empilhados no celular!
+        ft.ResponsiveRow([
+            ft.Container(
+                col={"xs": 12, "md": 6},
+                padding=10,
+                content=ft.Column([
+                    ft.Text("Novo Produto", size=18, weight="bold"),
+                    c_nome, c_sku, c_desc, c_preco, 
+                    btn_custom("Salvar Produto", "green", salvar_produto, ft.Icons.SAVE)
+                ])
+            ),
+            ft.Container(
+                col={"xs": 12, "md": 6},
+                padding=10,
+                content=ft.Column([
+                    ft.Text("Nova Prateleira", size=18, weight="bold"),
+                    c_loc_cod, c_loc_desc, 
+                    btn_custom("Salvar Prateleira", "orange", salvar_prateleira, ft.Icons.SAVE)
+                ])
+            )
+        ])
+    ], expand=True, scroll=ft.ScrollMode.AUTO)
+
+    # =========================================================================
+    # MENU SUPERIOR CUSTOMIZADO (Navegação Completa Restaurada)
+    # =========================================================================
+    # 🔧 Adicionando as telas restauradas na lista principal de navegação
+    telas = [tela_home, tela_terminal, tela_produtos, tela_prateleiras, tela_cadastros]
     area_principal = ft.Container(content=tela_home, expand=True, padding=10)
-    
     botoes_menu = []
 
     def atualizar_destaque_menu(index_selecionado):
@@ -262,7 +364,6 @@ def main(page: ft.Page):
     def criar_item_menu(icone, texto, index):
         c = ft.Container(
             content=ft.Row([ft.Icon(icone, color="white", size=18), ft.Text(texto, color="white", weight="bold")]),
-            # 🔧 MUDANÇA BRUTA: Removendo o ft.padding.symmetric instável e usando um número absoluto (10)
             padding=10, border_radius=10, ink=True,
             on_click=lambda e, i=index: mudar_tela(i),
             bgcolor="#37474F" if index == 0 else "transparent"
@@ -275,7 +376,9 @@ def main(page: ft.Page):
             criar_item_menu(ft.Icons.DASHBOARD, "Dashboard", 0),
             criar_item_menu(ft.Icons.QR_CODE_SCANNER, "Terminal", 1),
             criar_item_menu(ft.Icons.INVENTORY_2, "Produtos", 2),
-        ], scroll=ft.ScrollMode.AUTO, alignment=ft.MainAxisAlignment.CENTER),
+            criar_item_menu(ft.Icons.VIEW_LIST, "Prateleiras", 3), # TELA DE PRATELEIRAS RESTAURADA
+            criar_item_menu(ft.Icons.ADD_CIRCLE, "Cadastros", 4),  # TELA DE CADASTROS RESTAURADA
+        ], scroll=ft.ScrollMode.AUTO, alignment=ft.MainAxisAlignment.START),
         bgcolor="#1E1E1E", padding=10, border_radius=10
     )
 
@@ -291,7 +394,6 @@ def main(page: ft.Page):
     )
 
     carregar_tudo_e_atualizar()
-    renderizar_produtos()
 
     def motor_de_atualizacao():
         while True:
