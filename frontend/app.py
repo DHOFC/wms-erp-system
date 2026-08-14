@@ -4,7 +4,7 @@ import os
 import threading 
 import time
 
-API_BASE_URL = "http://127.0.0.1:8000"
+API_BASE_URL = "https://wms-erp-system.onrender.com"
 HEADERS_SEGUROS = {"X-API-Key": "wms-secreto-2024"}
 
 def main(page: ft.Page):
@@ -353,4 +353,5 @@ def main(page: ft.Page):
         )
     )
 
-ft.app(target=main)
+porta = int(os.environ.get("PORT", 8080))
+ft.app(target=main, view=ft.WEB_BROWSER, host="0.0.0.0", port=porta)
