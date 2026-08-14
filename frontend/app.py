@@ -47,15 +47,16 @@ def main(page: ft.Page):
     dados_movimentacoes = []
 
     # =========================================================================
-    # TELA 0: HOME / DASHBOARD (GRÁFICOS NATIVOS)
+    # TELA 0: HOME / DASHBOARD (GRÁFICOS NATIVOS SEGUROS)
     # =========================================================================
     kpi_skus = ft.Text("0", size=28, weight="bold")
     kpi_valor = ft.Text("$ 0.00", size=28, weight="bold")
     kpi_locais = ft.Text("0", size=28, weight="bold")
     kpi_ops = ft.Text("0", size=28, weight="bold") 
     
-    container_grafico_linha = ft.Container(height=300, padding=15)
-    container_grafico_barra = ft.Container(height=300, padding=15)
+    # Iniciar os containers já com conteúdo para evitar o bug de otimização do Flutter
+    container_grafico_linha = ft.Container(content=ft.Text("Aguardando dados...", color="grey"), height=300, padding=15)
+    container_grafico_barra = ft.Container(content=ft.Text("Aguardando dados...", color="grey"), height=300, padding=15)
 
     def criar_card_kpi(titulo, texto_valor, trend_text, trend_color, trend_icon):
         return ft.Card(
@@ -74,64 +75,78 @@ def main(page: ft.Page):
         )
 
     def atualizar_kpis():
-        estoque_real = {}
-        for mov in dados_movimentacoes:
-            p_id = mov["product_id"]
-            qtd = mov["quantity"]
-            if mov["movement_type"] == "IN": estoque_real[p_id] = estoque_real.get(p_id, 0) + qtd
-            else: estoque_real[p_id] = estoque_real.get(p_id, 0) - qtd
+        try:
+            estoque_real = {}
+            for mov in dados_movimentacoes:
+                p_id = mov["product_id"]
+                qtd = mov["quantity"]
+                if mov["movement_type"] == "IN": estoque_real[p_id] = estoque_real.get(p_id, 0) + qtd
+                else: estoque_real[p_id] = estoque_real.get(p_id, 0) - qtd
 
-        total_skus = len(dados_produtos)
-        total_locais = len(dados_locais)
-        total_operacoes = len(dados_movimentacoes)
-        
-        valor_total = sum(float(p["price"]) * estoque_real.get(p["id"], 0) for p in dados_produtos)
-        
-        kpi_skus.value = str(total_skus)
-        kpi_valor.value = f"$ {valor_total:,.2f}"
-        kpi_locais.value = str(total_locais)
-        kpi_ops.value = str(total_operacoes) 
-        
-        # --- CONSTRUÇÃO DE GRÁFICOS BLINDADOS USANDO CONTAINERS ---
-        if total_skus > 0:
-            produtos_top = sorted(dados_produtos, key=lambda x: float(x["price"]) * estoque_real.get(x["id"], 0), reverse=True)[:5]
-            max_valor_barra = max([float(p["price"]) * estoque_real.get(p["id"], 0) for p in produtos_top]) if produtos_top else 1
+            total_skus = len(dados_produtos)
+            total_locais = len(dados_locais)
+            total_operacoes = len(dados_movimentacoes)
             
-            # Gráfico de Barras Customizado (Top 5 Valor)
-            barras_ui = []
-            for p in produtos_top:
-                valor_estocado = float(p["price"]) * estoque_real.get(p["id"], 0)
-                altura = (valor_estocado / max_valor_barra) * 180 if max_valor_barra > 0 else 0 
+            valor_total = sum(float(p["price"]) * estoque_real.get(p["id"], 0) for p in dados_produtos)
+            
+            kpi_skus.value = str(total_skus)
+            kpi_valor.value = f"$ {valor_total:,.2f}"
+            kpi_locais.value = str(total_locais)
+            kpi_ops.value = str(total_operacoes) 
+            
+            # --- CONSTRUÇÃO DE GRÁFICOS USANDO PROPRIEDADES 100% SEGURAS ---
+            if total_skus > 0:
+                produtos_top = sorted(dados_produtos, key=lambda x: float(x["price"]) * estoque_real.get(x["id"], 0), reverse=True)[:5]
+                max_valor_barra = max([float(p["price"]) * estoque_real.get(p["id"], 0) for p in produtos_top]) if produtos_top else 1
                 
-                barras_ui.append(
-                    ft.Column([
-                        ft.Text(f"${valor_estocado/1000:.1f}k", size=11, color="#B0BEC5", text_align="center"),
-                        ft.Container(width=45, height=altura, bgcolor="#4CAF50", border_radius=ft.border_radius.vertical(top=6)),
-                        ft.Text(p["sku"][:5], size=11, weight="bold", text_align="center")
-                    ], alignment=ft.MainAxisAlignment.END, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
-                )
-            container_grafico_barra.content = ft.Row(barras_ui, alignment=ft.MainAxisAlignment.SPACE_EVENLY, vertical_alignment=ft.CrossAxisAlignment.END, expand=True)
+                # Gráfico de Barras Customizado (Top 5 Valor)
+                barras_ui = []
+                for p in produtos_top:
+                    valor_estocado = float(p["price"]) * estoque_real.get(p["id"], 0)
+                    altura = (valor_estocado / max_valor_barra) * 180 if max_valor_barra > 0 else 0 
+                    
+                    barras_ui.append(
+                        ft.Column([
+                            ft.Text(f"${valor_estocado/1000:.1f}k", size=11, color="#B0BEC5"),
+                            # border_radius com int absoluto para não quebrar
+                            ft.Container(width=45, height=altura, bgcolor="#4CAF50", border_radius=5),
+                            ft.Text(p["sku"][:5], size=11, weight="bold")
+                        ], alignment=ft.MainAxisAlignment.END, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                    )
+                container_grafico_barra.content = ft.Row(barras_ui, alignment=ft.MainAxisAlignment.SPACE_EVENLY, vertical_alignment=ft.CrossAxisAlignment.END, expand=True)
+                
+                # Gráfico de Lista de Ativos (Crescimento)
+                linhas_ui = []
+                max_preco = max([float(p["price"]) for p in dados_produtos]) if dados_produtos else 1
+                for p in dados_produtos[:6]:
+                    linhas_ui.append(
+                        ft.Column([
+                            ft.Row([
+                                ft.Icon(ft.Icons.TRENDING_UP, size=16, color="#2196F3"),
+                                ft.Text(p["name"], size=13, expand=True),
+                                ft.Text(f"$ {float(p['price']):,.2f}", size=13, weight="bold")
+                            ]),
+                            # ProgressBar envolvida em Container para proteger a propriedade height
+                            ft.Container(height=6, content=ft.ProgressBar(value=float(p["price"])/max_preco if max_preco > 0 else 0, color="#2196F3", bgcolor="#37474F"))
+                        ], spacing=4)
+                    )
+                container_grafico_linha.content = ft.Column(linhas_ui, expand=True, spacing=15)
+            else:
+                container_grafico_barra.content = ft.Text("Sem dados no estoque para plotar.")
+                container_grafico_linha.content = ft.Text("Sem dados no estoque para plotar.")
             
-            # Gráfico de Lista de Ativos (Crescimento)
-            linhas_ui = []
-            max_preco = max([float(p["price"]) for p in dados_produtos]) if dados_produtos else 1
-            for p in dados_produtos[:6]:
-                linhas_ui.append(
-                    ft.Column([
-                        ft.Row([
-                            ft.Icon(ft.Icons.TRENDING_UP, size=16, color="#2196F3"),
-                            ft.Text(p["name"], size=13, expand=True),
-                            ft.Text(f"$ {float(p['price']):,.2f}", size=13, weight="bold")
-                        ]),
-                        ft.ProgressBar(value=float(p["price"])/max_preco if max_preco > 0 else 0, color="#2196F3", bgcolor="#37474F", height=6)
-                    ], spacing=4)
-                )
-            container_grafico_linha.content = ft.Column(linhas_ui, expand=True, spacing=15)
-        else:
-            container_grafico_barra.content = ft.Text("Sem dados suficientes.")
-            container_grafico_linha.content = ft.Text("Sem dados suficientes.")
+            page.update()
             
-        page.update()
+            # Força o recarregamento direto na memória da página
+            if container_grafico_barra.page: container_grafico_barra.update()
+            if container_grafico_linha.page: container_grafico_linha.update()
+            
+        except Exception as e:
+            # CHEGA DE FALHAS SILENCIOSAS. Se o gráfico quebrar, ele vai avisar o porquê na tela!
+            container_grafico_barra.content = ft.Text(f"Erro Visual: {e}", color="red")
+            container_grafico_linha.content = ft.Text(f"Erro Visual: {e}", color="red")
+            if container_grafico_barra.page: container_grafico_barra.update()
+            if container_grafico_linha.page: container_grafico_linha.update()
 
     def carregar_tudo_e_atualizar():
         nonlocal dados_produtos, dados_locais, dados_movimentacoes
@@ -143,9 +158,11 @@ def main(page: ft.Page):
             if res_p.status_code == 200: dados_produtos = res_p.json()
             if res_l.status_code == 200: dados_locais = res_l.json()
             if res_m.status_code == 200: dados_movimentacoes = res_m.json()
-            
-            atualizar_kpis()
-        except Exception: pass
+        except Exception as e:
+            print(f"Erro na API: {e}")
+        
+        # Chama a atualização dos KPIs FORA do try..except da API para blindar a lógica
+        atualizar_kpis()
 
     tela_home = ft.Column([
         ft.Text("Executive Dashboard", size=28, weight="bold"),
@@ -367,6 +384,5 @@ def main(page: ft.Page):
         )
     )
 
-# Mantemos ft.app intencionalmente. O aviso do terminal não afeta o funcionamento.
 porta = int(os.environ.get("PORT", 8080))
 ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=porta)
