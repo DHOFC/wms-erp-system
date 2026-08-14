@@ -112,12 +112,15 @@ def main(page: ft.Page):
     def carregar_tudo_e_atualizar():
         nonlocal dados_produtos, dados_locais, dados_movimentacoes
         try:
-            res_p = requests.get(f"{API_BASE_URL}/products/")
-            res_l = requests.get(f"{API_BASE_URL}/locations/")
-            res_m = requests.get(f"{API_BASE_URL}/movements/") 
+            # 🔧 Correção: Adicionando o crachá de segurança (headers) nas requisições GET!
+            res_p = requests.get(f"{API_BASE_URL}/products/", headers=HEADERS_SEGUROS)
+            res_l = requests.get(f"{API_BASE_URL}/locations/", headers=HEADERS_SEGUROS)
+            res_m = requests.get(f"{API_BASE_URL}/movements/", headers=HEADERS_SEGUROS) 
+            
             if res_p.status_code == 200: dados_produtos = res_p.json()
             if res_l.status_code == 200: dados_locais = res_l.json()
             if res_m.status_code == 200: dados_movimentacoes = res_m.json()
+            
             atualizar_kpis()
         except Exception: pass
 
