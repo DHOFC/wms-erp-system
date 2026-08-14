@@ -8,9 +8,7 @@ API_BASE_URL = "https://wms-erp-system.onrender.com"
 HEADERS_SEGUROS = {"X-API-Key": "wms-secreto-2024"}
 
 def main(page: ft.Page):
-    # =========================================================================
     # 1. CONFIGURAÇÕES DA JANELA E TEMA CORPORATIVO
-    # =========================================================================
     page.title = "WMS Enterprise - Dashboard"
     page.theme_mode = ft.ThemeMode.DARK
     page.window.width = 1000
@@ -24,9 +22,7 @@ def main(page: ft.Page):
         texto_notificacao.color = cor
         page.update()
 
-    # =========================================================================
     # COMPONENTE BLINDADO: BOTÃO CUSTOMIZADO
-    # =========================================================================
     def btn_custom(texto, cor, click, icone=None):
         elementos = []
         if icone:
@@ -39,16 +35,12 @@ def main(page: ft.Page):
             on_click=click, height=40
         )
 
-    # =========================================================================
     # VARIÁVEIS GLOBAIS DE DADOS
-    # =========================================================================
     dados_produtos = []
     dados_locais = []
     dados_movimentacoes = []
 
-    # =========================================================================
     # TELA 0: HOME / DASHBOARD (GRÁFICOS NATIVOS SEGUROS)
-    # =========================================================================
     kpi_skus = ft.Text("0", size=28, weight="bold")
     kpi_valor = ft.Text("$ 0.00", size=28, weight="bold")
     kpi_locais = ft.Text("0", size=28, weight="bold")
@@ -182,9 +174,7 @@ def main(page: ft.Page):
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True, scroll=ft.ScrollMode.AUTO) 
 
-    # =========================================================================
     # TELA 1: TERMINAL DE OPERAÇÃO
-    # =========================================================================
     campo_produto_op = ft.TextField(label="ID do Produto", width=300)
     campo_local_op = ft.TextField(label="ID da Prateleira", width=300)
     campo_qtd_op = ft.TextField(label="Quantidade", width=300, keyboard_type=ft.KeyboardType.NUMBER)
@@ -213,9 +203,7 @@ def main(page: ft.Page):
         btn_custom("Confirmar Movimentação", "blue", enviar_movimentacao, ft.Icons.CHECK_CIRCLE)
     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, expand=True)
 
-    # =========================================================================
     # TELA 2: GESTÃO DE PRODUTOS
-    # =========================================================================
     tabela_produtos = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("SKU")), ft.DataColumn(ft.Text("Nome")), ft.DataColumn(ft.Text("Preço")), ft.DataColumn(ft.Text("Ações"))], rows=[])
 
     def renderizar_produtos(lista):
@@ -252,9 +240,7 @@ def main(page: ft.Page):
         ft.Column([tabela_produtos], scroll=ft.ScrollMode.AUTO, expand=True)
     ], expand=True)
 
-    # =========================================================================
     # TELA 3: GESTÃO DE PRATELEIRAS
-    # =========================================================================
     tabela_locais = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("Código")), ft.DataColumn(ft.Text("Descrição")), ft.DataColumn(ft.Text("Ações"))], rows=[])
 
     def renderizar_locais(lista):
@@ -291,9 +277,7 @@ def main(page: ft.Page):
         ft.Column([tabela_locais], scroll=ft.ScrollMode.AUTO, expand=True)
     ], expand=True)
 
-    # =========================================================================
     # TELA 4: CADASTROS
-    # =========================================================================
     c_nome = ft.TextField(label="Nome", width=250); c_sku = ft.TextField(label="SKU", width=250)
     c_desc = ft.TextField(label="Descrição", width=250); c_preco = ft.TextField(label="Preço", width=250)
     
@@ -321,9 +305,7 @@ def main(page: ft.Page):
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True)
 
-    # =========================================================================
     # MENU LATERAL CUSTOMIZADO
-    # =========================================================================
     telas = [tela_home, tela_terminal, tela_produtos, tela_prateleiras, tela_cadastros]
     area_principal = ft.Container(content=tela_home, expand=True, padding=20)
     botoes_menu = []
@@ -358,9 +340,7 @@ def main(page: ft.Page):
         width=180, bgcolor="#1E1E1E", padding=10
     )
 
-    # =========================================================================
     # INICIALIZAÇÃO E AUTO-REFRESH
-    # =========================================================================
     carregar_tudo_e_atualizar()
     filtrar_produtos(None)
     filtrar_locais(None)
