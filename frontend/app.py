@@ -52,7 +52,6 @@ def main(page: ft.Page):
     container_grafico_barra = ft.Container(content=ft.Text("Aguardando dados...", color="grey"), padding=15)
 
     def criar_card_kpi(titulo, texto_valor, trend_text, trend_color, trend_icon):
-        # 🔧 Correção de UX: Usando coluna responsiva para Mobile
         return ft.Container(
             col={"xs": 12, "sm": 6, "md": 3},
             content=ft.Card(
@@ -92,19 +91,16 @@ def main(page: ft.Page):
             kpi_ops.value = str(total_operacoes) 
             
             if total_skus > 0:
-                # 🔧 Correção de Lógica: Calcular baseado no VALOR REAL EM ESTOQUE e não só no preço
                 produtos_com_estoque = []
                 for p in dados_produtos:
                     valor_em_estoque = float(p["price"]) * estoque_real.get(p["id"], 0)
                     produtos_com_estoque.append({"produto": p, "valor_total": valor_em_estoque})
                 
-                # Ordenar os mais valiosos do estoque atual
                 produtos_com_estoque.sort(key=lambda x: x["valor_total"], reverse=True)
                 max_valor_estoque = produtos_com_estoque[0]["valor_total"] if produtos_com_estoque and produtos_com_estoque[0]["valor_total"] > 0 else 1
                 
-                # Gráfico de Barras Customizado (Top Valor)
                 barras_ui = []
-                for item in produtos_com_estoque[:4]: # Top 4 para caber melhor no mobile
+                for item in produtos_com_estoque[:4]: 
                     v_estocado = item["valor_total"]
                     p_sku = item["produto"]["sku"][:5]
                     altura = (v_estocado / max_valor_estoque) * 150 if max_valor_estoque > 0 else 0 
@@ -118,7 +114,6 @@ def main(page: ft.Page):
                     )
                 container_grafico_barra.content = ft.Row(barras_ui, alignment=ft.MainAxisAlignment.SPACE_EVENLY, vertical_alignment=ft.CrossAxisAlignment.END, height=220)
                 
-                # Gráfico de Crescimento Dinâmico (As barras azuis agora se mexem com o estoque!)
                 linhas_ui = []
                 for item in produtos_com_estoque[:6]:
                     v_estocado = item["valor_total"]
@@ -165,7 +160,6 @@ def main(page: ft.Page):
         ft.Text("Resumo financeiro e operacional do armazém", color="grey"),
         ft.Divider(height=10, color="transparent"),
         
-        # 🔧 Correção de UX: Transformando a linha rígida em uma grade flexível
         ft.ResponsiveRow([
             criar_card_kpi("Total Revenue", kpi_valor, "Dinâmico", "green", ft.Icons.ATTACH_MONEY),
             criar_card_kpi("Total SKUs", kpi_skus, "Ativos", "green", ft.Icons.INVENTORY),
@@ -176,7 +170,6 @@ def main(page: ft.Page):
         ft.Divider(height=20, color="transparent"),
         ft.Text("Evolução Dinâmica de Ativos & Concentração", size=20, weight="bold"),
         
-        # 🔧 Correção de UX: Gráficos empilham no celular e ficam lado a lado no PC
         ft.ResponsiveRow([
             ft.Container(col={"xs": 12, "md": 8}, content=ft.Card(content=container_grafico_linha)),
             ft.Container(col={"xs": 12, "md": 4}, content=ft.Card(content=container_grafico_barra)),
@@ -215,12 +208,12 @@ def main(page: ft.Page):
                 campo_produto_op, campo_local_op, campo_qtd_op, campo_tipo_op,
                 btn_custom("Confirmar Movimentação", "blue", enviar_movimentacao, ft.Icons.CHECK_CIRCLE)
             ], spacing=15),
-            max_width=400 # Mantém o formulário bonito e centralizado em telas grandes e pequenas
+            width=400 # 🔧 Trocado max_width para width para compatibilidade
         )
     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, expand=True)
 
     # =========================================================================
-    # TELA 2 e 3: TABELAS (Envolvidas em rolagem para não quebrar no celular)
+    # TELA 2: GESTÃO DE PRODUTOS
     # =========================================================================
     tabela_produtos = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("SKU")), ft.DataColumn(ft.Text("Nome")), ft.DataColumn(ft.Text("Preço")), ft.DataColumn(ft.Text("Ações"))], rows=[])
     
@@ -244,13 +237,13 @@ def main(page: ft.Page):
     tela_produtos = ft.Column([
         ft.Text("Estoque de Produtos", size=28, weight="bold", color="blue"),
         ft.Row([ft.IconButton(icon=ft.Icons.REFRESH, on_click=lambda e: carregar_tudo_e_atualizar())]),
-        ft.Row([tabela_produtos], scroll=ft.ScrollMode.AUTO) # Scroll horizontal garante que não esprema no mobile
+        ft.Row([tabela_produtos], scroll=ft.ScrollMode.AUTO)
     ], expand=True, scroll=ft.ScrollMode.AUTO)
 
     # =========================================================================
-    # MENU SUPERIOR CUSTOMIZADO (Solução Mobile-First)
+    # MENU SUPERIOR CUSTOMIZADO
     # =========================================================================
-    telas = [tela_home, tela_terminal, tela_produtos] # Removi as outras temporariamente para simplificar o arquivo, adicione de volta se precisar
+    telas = [tela_home, tela_terminal, tela_produtos]
     area_principal = ft.Container(content=tela_home, expand=True, padding=ft.padding.only(top=10))
     botoes_menu = []
 
@@ -273,7 +266,6 @@ def main(page: ft.Page):
         botoes_menu.append(c)
         return c
 
-    # 🔧 Correção de UX: O menu agora fica no topo e rola horizontalmente (Estilo App)
     menu_superior = ft.Container(
         content=ft.Row([
             criar_item_menu(ft.Icons.DASHBOARD, "Dashboard", 0),
@@ -284,7 +276,7 @@ def main(page: ft.Page):
     )
 
     # =========================================================================
-    # INICIALIZAÇÃO DA TELA (Top-Down Flow)
+    # INICIALIZAÇÃO DA TELA
     # =========================================================================
     page.add(
         ft.Column([
