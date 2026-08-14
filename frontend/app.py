@@ -8,6 +8,7 @@ API_BASE_URL = "https://wms-erp-system.onrender.com"
 HEADERS_SEGUROS = {"X-API-Key": "wms-secreto-2024"}
 
 def main(page: ft.Page):
+    # 1. CONFIGURAÇÕES DA JANELA E TEMA CORPORATIVO
     page.title = "WMS Enterprise - Dashboard"
     page.theme_mode = ft.ThemeMode.DARK
     page.window.width = 1000
@@ -21,10 +22,12 @@ def main(page: ft.Page):
         texto_notificacao.color = cor
         page.update()
 
+    # VARIÁVEIS GLOBAIS DE DADOS
     dados_produtos = []
     dados_locais = []
     dados_movimentacoes = []
 
+    # TELA 0: HOME / DASHBOARD (ESTILO ECHARTS / BUSINESS)
     kpi_skus = ft.Text("0", size=28, weight="bold")
     kpi_valor = ft.Text("$ 0.00", size=28, weight="bold")
     kpi_locais = ft.Text("0", size=28, weight="bold")
@@ -38,10 +41,10 @@ def main(page: ft.Page):
             elevation=2,
             content=ft.Container(
                 padding=20,
-                bgcolor=ft.colors.SURFACE_VARIANT,
+                bgcolor=ft.Colors.SURFACE_VARIANT,
                 border_radius=10,
                 content=ft.Column([
-                    ft.Text(titulo, size=14, color=ft.colors.ON_SURFACE_VARIANT),
+                    ft.Text(titulo, size=14, color=ft.Colors.ON_SURFACE_VARIANT),
                     texto_valor,
                     ft.Row([
                         ft.Icon(trend_icon, color=trend_color, size=16),
@@ -83,18 +86,18 @@ def main(page: ft.Page):
             rotulos_b = []
             for i, p in enumerate(produtos_top):
                 valor_estocado = float(p["price"]) * estoque_real.get(p["id"], 0)
-                barras.append(ft.BarChartGroup(x=i, bar_rods=[ft.BarChartRod(from_y=0, to_y=valor_estocado, color=ft.colors.GREEN_400, width=20)]))
+                barras.append(ft.BarChartGroup(x=i, bar_rods=[ft.BarChartRod(from_y=0, to_y=valor_estocado, color=ft.Colors.GREEN_400, width=20)]))
                 rotulos_b.append(ft.ChartAxisLabel(value=i, label=ft.Text(p["sku"][:5], size=10)))
             
             container_grafico_barra.content = ft.BarChart(
                 bar_groups=barras, bottom_axis=ft.ChartAxis(labels=rotulos_b),
-                tooltip_bgcolor=ft.colors.BLUE_GREY_900, border=ft.border.all(1, ft.colors.GREY_800), expand=True
+                tooltip_bgcolor=ft.Colors.BLUE_GREY_900, border=ft.border.all(1, ft.Colors.GREY_800), expand=True
             )
             
             pontos_linha = [ft.LineChartDataPoint(i, float(p["price"])) for i, p in enumerate(dados_produtos[:10])]
             container_grafico_linha.content = ft.LineChart(
-                data_series=[ft.LineChartData(data_points=pontos_linha, stroke_width=3, color=ft.colors.BLUE_400, curved=True, stroke_cap_round=True)],
-                border=ft.border.all(1, ft.colors.GREY_800), horizontal_grid_lines=ft.ChartGridLines(color=ft.colors.GREY_800, width=1, dash_pattern=[3, 3]), tooltip_bgcolor=ft.colors.BLUE_GREY_900, expand=True
+                data_series=[ft.LineChartData(data_points=pontos_linha, stroke_width=3, color=ft.Colors.BLUE_400, curved=True, stroke_cap_round=True)],
+                border=ft.border.all(1, ft.Colors.GREY_800), horizontal_grid_lines=ft.ChartGridLines(color=ft.Colors.GREY_800, width=1, dash_pattern=[3, 3]), tooltip_bgcolor=ft.Colors.BLUE_GREY_900, expand=True
             )
         else:
             container_grafico_barra.content = ft.Text("Sem dados suficientes.")
@@ -117,15 +120,15 @@ def main(page: ft.Page):
         except Exception: pass
 
     linha_kpis = ft.Row([
-        criar_card_kpi("Total Revenue (Valor em Estoque)", kpi_valor, "+ 12.5%", ft.colors.GREEN_500, ft.icons.ARROW_UPWARD),
-        criar_card_kpi("Total SKUs (Catálogo)", kpi_skus, "+ 3.2%", ft.colors.GREEN_500, ft.icons.ARROW_UPWARD),
-        criar_card_kpi("Capacidade (Prateleiras)", kpi_locais, "Estável", ft.colors.GREY_400, ft.icons.REMOVE),
-        criar_card_kpi("Operações Totais", kpi_ops, "- 1.5%", ft.colors.RED_500, ft.icons.ARROW_DOWNWARD),
+        criar_card_kpi("Total Revenue (Valor em Estoque)", kpi_valor, "+ 12.5%", ft.Colors.GREEN_500, ft.Icons.ARROW_UPWARD),
+        criar_card_kpi("Total SKUs (Catálogo)", kpi_skus, "+ 3.2%", ft.Colors.GREEN_500, ft.Icons.ARROW_UPWARD),
+        criar_card_kpi("Capacidade (Prateleiras)", kpi_locais, "Estável", ft.Colors.GREY_400, ft.Icons.REMOVE),
+        criar_card_kpi("Operações Totais", kpi_ops, "- 1.5%", ft.Colors.RED_500, ft.Icons.ARROW_DOWNWARD),
     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
     tela_home = ft.Column([
         ft.Text("Executive Dashboard", size=28, weight=ft.FontWeight.BOLD),
-        ft.Text("Resumo financeiro e operacional do armazém", color=ft.colors.GREY_400),
+        ft.Text("Resumo financeiro e operacional do armazém", color=ft.Colors.GREY_400),
         ft.Divider(height=20, color="transparent"),
         
         linha_kpis,
@@ -151,6 +154,7 @@ def main(page: ft.Page):
     ], expand=True, scroll=ft.ScrollMode.AUTO) 
 
 
+    # TELA 1: TERMINAL DE OPERAÇÃO
     campo_produto_op = ft.TextField(label="ID do Produto", width=300)
     campo_local_op = ft.TextField(label="ID da Prateleira", width=300)
     campo_qtd_op = ft.TextField(label="Quantidade", width=300, keyboard_type=ft.KeyboardType.NUMBER)
@@ -160,9 +164,9 @@ def main(page: ft.Page):
     )
 
     def enviar_movimentacao(e):
-        mostrar_notificacao("Processando...", ft.colors.YELLOW_400)
+        mostrar_notificacao("Processando...", ft.Colors.YELLOW_400)
         if not campo_produto_op.value or not campo_local_op.value or not campo_qtd_op.value or not campo_tipo_op.value:
-            mostrar_notificacao("❌ Preencha todos os campos!", ft.colors.RED_400)
+            mostrar_notificacao("❌ Preencha todos os campos!", ft.Colors.RED_400)
             return
 
         payload = {
@@ -174,22 +178,23 @@ def main(page: ft.Page):
         try:
             resposta = requests.post(f"{API_BASE_URL}/movements/", json=payload, headers=HEADERS_SEGUROS)
             if resposta.status_code == 201:
-                mostrar_notificacao("✅ Movimentação registrada!", ft.colors.GREEN_400)
+                mostrar_notificacao("✅ Movimentação registrada!", ft.Colors.GREEN_400)
                 campo_qtd_op.value = ""
                 carregar_tudo_e_atualizar() 
             else:
-                mostrar_notificacao(f"❌ Negado: {resposta.json().get('detail')}", ft.colors.RED_400)
+                mostrar_notificacao(f"❌ Negado: {resposta.json().get('detail')}", ft.Colors.RED_400)
         except Exception:
-            mostrar_notificacao("❌ Falha de Conexão.", ft.colors.RED_400)
+            mostrar_notificacao("❌ Falha de Conexão.", ft.Colors.RED_400)
         page.update()
 
     tela_terminal = ft.Column([
-        ft.Text("Terminal da Empilhadeira", size=28, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_400),
+        ft.Text("Terminal da Empilhadeira", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400),
         ft.Divider(color="transparent", height=20),
         campo_produto_op, campo_local_op, campo_qtd_op, campo_tipo_op,
-        ft.ElevatedButton("Confirmar Movimentação", icon=ft.icons.CHECK_CIRCLE, bgcolor=ft.colors.BLUE_700, color="white", on_click=enviar_movimentacao)
+        ft.ElevatedButton("Confirmar Movimentação", icon=ft.Icons.CHECK_CIRCLE, bgcolor=ft.Colors.BLUE_700, color="white", on_click=enviar_movimentacao)
     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, expand=True)
 
+    # TELA 2: GESTÃO DE PRODUTOS
     tabela_produtos = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("SKU")),
@@ -203,7 +208,7 @@ def main(page: ft.Page):
             tabela_produtos.rows.append(ft.DataRow(cells=[
                 ft.DataCell(ft.Text(str(p["id"]))), ft.DataCell(ft.Text(p["sku"])),
                 ft.DataCell(ft.Text(p["name"])), ft.DataCell(ft.Text(f"R$ {p['price']:.2f}")),
-                ft.DataCell(ft.IconButton(icon=ft.icons.DELETE, icon_color="red", on_click=lambda e, s=p["sku"]: confirmar_excluir_produto(s))),
+                ft.DataCell(ft.IconButton(icon=ft.Icons.DELETE, icon_color="red", on_click=lambda e, s=p["sku"]: confirmar_excluir_produto(s))),
             ]))
         page.update()
 
@@ -224,16 +229,17 @@ def main(page: ft.Page):
             fechar(None)
             requests.delete(f"{API_BASE_URL}/products/{sku}", headers=HEADERS_SEGUROS)
             carregar_produtos()
-            mostrar_notificacao(f"✅ SKU {sku} excluído!", ft.colors.GREEN_400)
+            mostrar_notificacao(f"✅ SKU {sku} excluído!", ft.Colors.GREEN_400)
         pop_up = ft.AlertDialog(title=ft.Text("Excluir Produto"), content=ft.Text(f"Deletar '{sku}'?"), actions=[ft.TextButton("Cancelar", on_click=fechar), ft.ElevatedButton("Excluir", bgcolor="red", color="white", on_click=deletar)])
         page.dialog = pop_up; pop_up.open = True; page.update()
 
     tela_produtos = ft.Column([
-        ft.Text("Estoque de Produtos", size=28, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_400),
-        ft.Row([campo_pesq_prod, ft.IconButton(icon=ft.icons.REFRESH, on_click=carregar_produtos)]),
+        ft.Text("Estoque de Produtos", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400),
+        ft.Row([campo_pesq_prod, ft.IconButton(icon=ft.Icons.REFRESH, on_click=carregar_produtos)]),
         ft.Column([tabela_produtos], scroll=ft.ScrollMode.AUTO, expand=True)
     ], expand=True)
 
+    # TELA 3: GESTÃO DE PRATELEIRAS
     tabela_locais = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("Código")),
@@ -246,7 +252,7 @@ def main(page: ft.Page):
         for l in lista:
             tabela_locais.rows.append(ft.DataRow(cells=[
                 ft.DataCell(ft.Text(str(l["id"]))), ft.DataCell(ft.Text(l["code"])), ft.DataCell(ft.Text(l["description"])),
-                ft.DataCell(ft.IconButton(icon=ft.icons.DELETE, icon_color="red", on_click=lambda e, lid=l["id"], cod=l["code"]: confirmar_excluir_local(lid, cod))),
+                ft.DataCell(ft.IconButton(icon=ft.Icons.DELETE, icon_color="red", on_click=lambda e, lid=l["id"], cod=l["code"]: confirmar_excluir_local(lid, cod))),
             ]))
         page.update()
 
@@ -267,16 +273,17 @@ def main(page: ft.Page):
             fechar(None)
             requests.delete(f"{API_BASE_URL}/locations/{lid}", headers=HEADERS_SEGUROS)
             carregar_locais()
-            mostrar_notificacao(f"✅ Prateleira {cod} excluída!", ft.colors.GREEN_400)
+            mostrar_notificacao(f"✅ Prateleira {cod} excluída!", ft.Colors.GREEN_400)
         pop_up = ft.AlertDialog(title=ft.Text("Excluir Prateleira"), content=ft.Text(f"Deletar '{cod}'?"), actions=[ft.TextButton("Cancelar", on_click=fechar), ft.ElevatedButton("Excluir", bgcolor="red", color="white", on_click=deletar)])
         page.dialog = pop_up; pop_up.open = True; page.update()
 
     tela_prateleiras = ft.Column([
-        ft.Text("Mapa de Prateleiras", size=28, weight=ft.FontWeight.BOLD, color=ft.colors.ORANGE_400),
-        ft.Row([campo_pesq_locais, ft.IconButton(icon=ft.icons.REFRESH, on_click=carregar_locais)]),
+        ft.Text("Mapa de Prateleiras", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_400),
+        ft.Row([campo_pesq_locais, ft.IconButton(icon=ft.Icons.REFRESH, on_click=carregar_locais)]),
         ft.Column([tabela_locais], scroll=ft.ScrollMode.AUTO, expand=True)
     ], expand=True)
 
+    # TELA 4: CADASTROS
     c_nome = ft.TextField(label="Nome", width=250); c_sku = ft.TextField(label="SKU", width=250)
     c_desc = ft.TextField(label="Descrição", width=250); c_preco = ft.TextField(label="Preço", width=250)
     
@@ -284,21 +291,21 @@ def main(page: ft.Page):
         try:
             req = requests.post(f"{API_BASE_URL}/products/", json={"name": c_nome.value, "sku": c_sku.value, "description": c_desc.value, "price": float(c_preco.value.replace(",","."))}, headers=HEADERS_SEGUROS)
             if req.status_code == 201: 
-                mostrar_notificacao("✅ Produto cadastrado!", ft.colors.GREEN_400)
+                mostrar_notificacao("✅ Produto cadastrado!", ft.Colors.GREEN_400)
                 carregar_produtos()
-        except Exception: mostrar_notificacao("❌ Erro ao salvar produto.", ft.colors.RED_400)
+        except Exception: mostrar_notificacao("❌ Erro ao salvar produto.", ft.Colors.RED_400)
 
     c_loc_cod = ft.TextField(label="Código", width=250); c_loc_desc = ft.TextField(label="Descrição", width=250)
     def salvar_prateleira(e):
         try:
             req = requests.post(f"{API_BASE_URL}/locations/", json={"code": c_loc_cod.value, "description": c_loc_desc.value}, headers=HEADERS_SEGUROS)
             if req.status_code == 201:
-                mostrar_notificacao("✅ Prateleira cadastrada!", ft.colors.GREEN_400)
+                mostrar_notificacao("✅ Prateleira cadastrada!", ft.Colors.GREEN_400)
                 carregar_locais() 
-        except Exception: mostrar_notificacao("❌ Erro ao salvar prateleira.", ft.colors.RED_400)
+        except Exception: mostrar_notificacao("❌ Erro ao salvar prateleira.", ft.Colors.RED_400)
 
     tela_cadastros = ft.Column([
-        ft.Text("Central de Cadastros", size=28, weight=ft.FontWeight.BOLD, color=ft.colors.PURPLE_400),
+        ft.Text("Central de Cadastros", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400),
         ft.Row([
             ft.Column([ft.Text("Novo Produto", size=18), c_nome, c_sku, c_desc, c_preco, ft.ElevatedButton("Salvar", on_click=salvar_produto, bgcolor="green", color="white")]),
             ft.VerticalDivider(width=40, color="transparent"),
@@ -321,15 +328,16 @@ def main(page: ft.Page):
         min_width=100,
         group_alignment=-0.9, 
         destinations=[
-            ft.NavigationRailDestination(icon=ft.icons.DASHBOARD, label="Dashboard"),
-            ft.NavigationRailDestination(icon=ft.icons.QR_CODE_SCANNER, label="Terminal"),
-            ft.NavigationRailDestination(icon=ft.icons.INVENTORY_2, label="Produtos"),
-            ft.NavigationRailDestination(icon=ft.icons.VIEW_LIST, label="Prateleiras"),
-            ft.NavigationRailDestination(icon=ft.icons.ADD_CIRCLE, label="Cadastros"),
+            ft.NavigationRailDestination(icon=ft.Icons.DASHBOARD, label="Dashboard"),
+            ft.NavigationRailDestination(icon=ft.Icons.QR_CODE_SCANNER, label="Terminal"),
+            ft.NavigationRailDestination(icon=ft.Icons.INVENTORY_2, label="Produtos"),
+            ft.NavigationRailDestination(icon=ft.Icons.VIEW_LIST, label="Prateleiras"),
+            ft.NavigationRailDestination(icon=ft.Icons.ADD_CIRCLE, label="Cadastros"),
         ],
         on_change=mudar_tela,
     )
 
+    # INICIALIZAÇÃO E AUTO-REFRESH
     carregar_tudo_e_atualizar()
     filtrar_produtos(None)
     filtrar_locais(None)
@@ -353,5 +361,6 @@ def main(page: ft.Page):
         )
     )
 
+# Configuração para rodar na Nuvem como um Site (Web App)
 porta = int(os.environ.get("PORT", 8080))
 ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=porta)
