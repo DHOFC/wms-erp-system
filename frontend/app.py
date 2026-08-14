@@ -41,10 +41,10 @@ def main(page: ft.Page):
             elevation=2,
             content=ft.Container(
                 padding=20,
-                bgcolor="#2A2D32", # Cor hexadecimal segura (Surface Variant)
+                bgcolor="#2A2D32", 
                 border_radius=10,
                 content=ft.Column([
-                    ft.Text(titulo, size=14, color="#B0BEC5"), # Cor hexadecimal segura
+                    ft.Text(titulo, size=14, color="#B0BEC5"), 
                     texto_valor,
                     ft.Row([
                         ft.Icon(trend_icon, color=trend_color, size=16),
@@ -313,7 +313,7 @@ def main(page: ft.Page):
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True)
 
-    # A MÁGICA DA NAVEGAÇÃO LATERAL
+    # A MÁGICA DA NAVEGAÇÃO LATERAL (CORREÇÃO DE ÍCONES)
     telas = [tela_home, tela_terminal, tela_produtos, tela_prateleiras, tela_cadastros]
     
     area_principal = ft.Container(content=tela_home, expand=True, padding=20)
@@ -329,11 +329,12 @@ def main(page: ft.Page):
         min_width=100,
         group_alignment=-0.9, 
         destinations=[
-            ft.NavigationRailDestination(icon="dashboard", label="Dashboard"),
-            ft.NavigationRailDestination(icon="qr_code_scanner", label="Terminal"),
-            ft.NavigationRailDestination(icon="inventory_2", label="Produtos"),
-            ft.NavigationRailDestination(icon="view_list", label="Prateleiras"),
-            ft.NavigationRailDestination(icon="add_circle", label="Cadastros"),
+            # Usando icon_content = ft.Icon() para contornar o tipo estrito da nova versão
+            ft.NavigationRailDestination(icon_content=ft.Icon(name="dashboard"), label="Dashboard"),
+            ft.NavigationRailDestination(icon_content=ft.Icon(name="qr_code_scanner"), label="Terminal"),
+            ft.NavigationRailDestination(icon_content=ft.Icon(name="inventory_2"), label="Produtos"),
+            ft.NavigationRailDestination(icon_content=ft.Icon(name="view_list"), label="Prateleiras"),
+            ft.NavigationRailDestination(icon_content=ft.Icon(name="add_circle"), label="Cadastros"),
         ],
         on_change=mudar_tela,
     )
