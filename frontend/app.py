@@ -8,7 +8,9 @@ API_BASE_URL = "https://wms-erp-system.onrender.com"
 HEADERS_SEGUROS = {"X-API-Key": "wms-secreto-2024"}
 
 def main(page: ft.Page):
+    # =========================================================================
     # 1. CONFIGURAÇÕES DA JANELA E TEMA CORPORATIVO
+    # =========================================================================
     page.title = "WMS Enterprise - Dashboard"
     page.theme_mode = ft.ThemeMode.DARK
     page.window.width = 1000
@@ -22,7 +24,9 @@ def main(page: ft.Page):
         texto_notificacao.color = cor
         page.update()
 
-    # COMPONENTE BLINDADO: BOTÃO CUSTOMIZADO (Imune a Deprecation)
+    # =========================================================================
+    # COMPONENTE BLINDADO: BOTÃO CUSTOMIZADO
+    # =========================================================================
     def btn_custom(texto, cor, click, icone=None):
         elementos = []
         if icone:
@@ -35,12 +39,16 @@ def main(page: ft.Page):
             on_click=click, height=40
         )
 
+    # =========================================================================
     # VARIÁVEIS GLOBAIS DE DADOS
+    # =========================================================================
     dados_produtos = []
     dados_locais = []
     dados_movimentacoes = []
 
-    # TELA 0: HOME / DASHBOARD (ESTILO ECHARTS / BUSINESS)
+    # =========================================================================
+    # TELA 0: HOME / DASHBOARD
+    # =========================================================================
     kpi_skus = ft.Text("0", size=28, weight="bold")
     kpi_valor = ft.Text("$ 0.00", size=28, weight="bold")
     kpi_locais = ft.Text("0", size=28, weight="bold")
@@ -118,10 +126,10 @@ def main(page: ft.Page):
         ft.Text("Resumo financeiro e operacional do armazém", color="grey"),
         ft.Divider(height=20, color="transparent"),
         ft.Row([
-            criar_card_kpi("Total Revenue", kpi_valor, "+ 12.5%", "green", "arrow_upward"),
-            criar_card_kpi("Total SKUs", kpi_skus, "+ 3.2%", "green", "arrow_upward"),
-            criar_card_kpi("Prateleiras", kpi_locais, "Estável", "grey", "remove"),
-            criar_card_kpi("Operações", kpi_ops, "- 1.5%", "red", "arrow_downward"),
+            criar_card_kpi("Total Revenue", kpi_valor, "+ 12.5%", "green", ft.Icons.ARROW_UPWARD),
+            criar_card_kpi("Total SKUs", kpi_skus, "+ 3.2%", "green", ft.Icons.ARROW_UPWARD),
+            criar_card_kpi("Prateleiras", kpi_locais, "Estável", "grey", ft.Icons.REMOVE),
+            criar_card_kpi("Operações", kpi_ops, "- 1.5%", "red", ft.Icons.ARROW_DOWNWARD),
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
         ft.Divider(height=30, color="transparent"),
         ft.Text("Evolução de Ativos & Concentração", size=20, weight="bold"),
@@ -131,7 +139,9 @@ def main(page: ft.Page):
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True, scroll=ft.ScrollMode.AUTO) 
 
+    # =========================================================================
     # TELA 1: TERMINAL DE OPERAÇÃO
+    # =========================================================================
     campo_produto_op = ft.TextField(label="ID do Produto", width=300)
     campo_local_op = ft.TextField(label="ID da Prateleira", width=300)
     campo_qtd_op = ft.TextField(label="Quantidade", width=300, keyboard_type=ft.KeyboardType.NUMBER)
@@ -157,10 +167,12 @@ def main(page: ft.Page):
         ft.Text("Terminal da Empilhadeira", size=28, weight="bold", color="blue"),
         ft.Divider(color="transparent", height=20),
         campo_produto_op, campo_local_op, campo_qtd_op, campo_tipo_op,
-        btn_custom("Confirmar Movimentação", "blue", enviar_movimentacao, "check_circle")
+        btn_custom("Confirmar Movimentação", "blue", enviar_movimentacao, ft.Icons.CHECK_CIRCLE)
     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, expand=True)
 
+    # =========================================================================
     # TELA 2: GESTÃO DE PRODUTOS
+    # =========================================================================
     tabela_produtos = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("SKU")), ft.DataColumn(ft.Text("Nome")), ft.DataColumn(ft.Text("Preço")), ft.DataColumn(ft.Text("Ações"))], rows=[])
 
     def renderizar_produtos(lista):
@@ -168,7 +180,7 @@ def main(page: ft.Page):
         for p in lista:
             tabela_produtos.rows.append(ft.DataRow(cells=[
                 ft.DataCell(ft.Text(str(p["id"]))), ft.DataCell(ft.Text(p["sku"])), ft.DataCell(ft.Text(p["name"])), ft.DataCell(ft.Text(f"R$ {p['price']:.2f}")),
-                ft.DataCell(ft.IconButton(icon="delete", icon_color="red", on_click=lambda e, s=p["sku"]: confirmar_excluir_produto(s))),
+                ft.DataCell(ft.IconButton(icon=ft.Icons.DELETE, icon_color="red", on_click=lambda e, s=p["sku"]: confirmar_excluir_produto(s))),
             ]))
         page.update()
 
@@ -193,11 +205,13 @@ def main(page: ft.Page):
 
     tela_produtos = ft.Column([
         ft.Text("Estoque de Produtos", size=28, weight="bold", color="blue"),
-        ft.Row([campo_pesq_prod, ft.IconButton(icon="refresh", on_click=carregar_produtos)]),
+        ft.Row([campo_pesq_prod, ft.IconButton(icon=ft.Icons.REFRESH, on_click=carregar_produtos)]),
         ft.Column([tabela_produtos], scroll=ft.ScrollMode.AUTO, expand=True)
     ], expand=True)
 
+    # =========================================================================
     # TELA 3: GESTÃO DE PRATELEIRAS
+    # =========================================================================
     tabela_locais = ft.DataTable(columns=[ft.DataColumn(ft.Text("ID")), ft.DataColumn(ft.Text("Código")), ft.DataColumn(ft.Text("Descrição")), ft.DataColumn(ft.Text("Ações"))], rows=[])
 
     def renderizar_locais(lista):
@@ -205,7 +219,7 @@ def main(page: ft.Page):
         for l in lista:
             tabela_locais.rows.append(ft.DataRow(cells=[
                 ft.DataCell(ft.Text(str(l["id"]))), ft.DataCell(ft.Text(l["code"])), ft.DataCell(ft.Text(l["description"])),
-                ft.DataCell(ft.IconButton(icon="delete", icon_color="red", on_click=lambda e, lid=l["id"], cod=l["code"]: confirmar_excluir_local(lid, cod))),
+                ft.DataCell(ft.IconButton(icon=ft.Icons.DELETE, icon_color="red", on_click=lambda e, lid=l["id"], cod=l["code"]: confirmar_excluir_local(lid, cod))),
             ]))
         page.update()
 
@@ -230,11 +244,13 @@ def main(page: ft.Page):
 
     tela_prateleiras = ft.Column([
         ft.Text("Mapa de Prateleiras", size=28, weight="bold", color="orange"),
-        ft.Row([campo_pesq_locais, ft.IconButton(icon="refresh", on_click=carregar_locais)]),
+        ft.Row([campo_pesq_locais, ft.IconButton(icon=ft.Icons.REFRESH, on_click=carregar_locais)]),
         ft.Column([tabela_locais], scroll=ft.ScrollMode.AUTO, expand=True)
     ], expand=True)
 
+    # =========================================================================
     # TELA 4: CADASTROS
+    # =========================================================================
     c_nome = ft.TextField(label="Nome", width=250); c_sku = ft.TextField(label="SKU", width=250)
     c_desc = ft.TextField(label="Descrição", width=250); c_preco = ft.TextField(label="Preço", width=250)
     
@@ -256,13 +272,15 @@ def main(page: ft.Page):
     tela_cadastros = ft.Column([
         ft.Text("Central de Cadastros", size=28, weight="bold", color="purple"),
         ft.Row([
-            ft.Column([ft.Text("Novo Produto", size=18), c_nome, c_sku, c_desc, c_preco, btn_custom("Salvar Produto", "green", salvar_produto, "save")]),
+            ft.Column([ft.Text("Novo Produto", size=18), c_nome, c_sku, c_desc, c_preco, btn_custom("Salvar Produto", "green", salvar_produto, ft.Icons.SAVE)]),
             ft.VerticalDivider(width=40, color="transparent"),
-            ft.Column([ft.Text("Nova Prateleira", size=18), c_loc_cod, c_loc_desc, btn_custom("Salvar Prateleira", "orange", salvar_prateleira, "save")])
+            ft.Column([ft.Text("Nova Prateleira", size=18), c_loc_cod, c_loc_desc, btn_custom("Salvar Prateleira", "orange", salvar_prateleira, ft.Icons.SAVE)])
         ], alignment=ft.MainAxisAlignment.START)
     ], expand=True)
 
-    # COMPONENTE BLINDADO: MENU LATERAL CUSTOMIZADO
+    # =========================================================================
+    # MENU LATERAL CUSTOMIZADO
+    # =========================================================================
     telas = [tela_home, tela_terminal, tela_produtos, tela_prateleiras, tela_cadastros]
     area_principal = ft.Container(content=tela_home, expand=True, padding=20)
     botoes_menu = []
@@ -288,16 +306,18 @@ def main(page: ft.Page):
 
     menu_lateral = ft.Container(
         content=ft.Column([
-            criar_item_menu("dashboard", "Dashboard", 0),
-            criar_item_menu("qr_code_scanner", "Terminal", 1),
-            criar_item_menu("inventory_2", "Produtos", 2),
-            criar_item_menu("view_list", "Prateleiras", 3),
-            criar_item_menu("add_circle", "Cadastros", 4),
+            criar_item_menu(ft.Icons.DASHBOARD, "Dashboard", 0),
+            criar_item_menu(ft.Icons.QR_CODE_SCANNER, "Terminal", 1),
+            criar_item_menu(ft.Icons.INVENTORY_2, "Produtos", 2),
+            criar_item_menu(ft.Icons.VIEW_LIST, "Prateleiras", 3),
+            criar_item_menu(ft.Icons.ADD_CIRCLE, "Cadastros", 4),
         ]),
         width=180, bgcolor="#1E1E1E", padding=10
     )
 
+    # =========================================================================
     # INICIALIZAÇÃO E AUTO-REFRESH
+    # =========================================================================
     carregar_tudo_e_atualizar()
     filtrar_produtos(None)
     filtrar_locais(None)
@@ -321,6 +341,6 @@ def main(page: ft.Page):
         )
     )
 
-# Configuração para rodar na Nuvem como um Site (Web App)
+# Mantemos ft.app intencionalmente. O aviso do terminal não afeta o funcionamento.
 porta = int(os.environ.get("PORT", 8080))
 ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=porta)
